@@ -61,7 +61,7 @@ PendleMarketProcessor.bind({
         timestamp: getUnixTimestamp(ctx.timestamp)
       })
     }
-  });
+  }, 1);
 
 EQBBaseRewardProcessor.bind({
   address: PENDLE_POOL_ADDRESSES.EQB_STAKING,
