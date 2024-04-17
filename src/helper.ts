@@ -1,4 +1,4 @@
-import { PENDLE_POOL_ADDRESSES } from './consts.js';
+import { MISC_CONSTS, PENDLE_POOL_ADDRESSES } from './consts.js';
 import os from 'os';
 
 export function isPendleAddress(addr: string) {
@@ -28,4 +28,9 @@ export function isSentioInternalError(err: any): boolean {
     return true;
   }
   return false;
+}
+
+export function checkValidUpdateTimestamp(timestamp: number) {
+  const timestampInDay = timestamp % MISC_CONSTS.ONE_DAY_IN_SECONDS;
+  return Math.abs(timestampInDay - MISC_CONSTS.TARGETED_TIMESTAMP) < MISC_CONSTS.TARGETED_UPDATE_BUFFER;
 }

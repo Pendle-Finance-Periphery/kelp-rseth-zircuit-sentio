@@ -1,15 +1,13 @@
-import { Counter, Gauge } from '@sentio/sdk';
 import { ERC20Processor } from '@sentio/sdk/eth/builtin';
-import { MISC_CONSTS, PENDLE_POOL_ADDRESSES, CONFIG } from './consts.js';
-import { getUnixTimestamp, isPendleAddress } from './helper.js';
+import { PENDLE_POOL_ADDRESSES, CONFIG } from './consts.js';
+import { checkValidUpdateTimestamp, getUnixTimestamp } from './helper.js';
 import { handleSYTransfer } from './handlers/SY.js';
 import { PendleYieldTokenProcessor } from './types/eth/pendleyieldtoken.js';
 import { handleYTRedeemInterest, handleYTTransfer, processAllYTAccounts } from './handlers/YT.js';
-import { PendleMarketProcessor, getPendleMarketContractOnContext } from './types/eth/pendlemarket.js';
+import { PendleMarketProcessor } from './types/eth/pendlemarket.js';
 import { handleLPTransfer, handleMarketRedeemReward, handleMarketSwap, processAllLPAccounts } from './handlers/LP.js';
 import { EQBBaseRewardProcessor } from './types/eth/eqbbasereward.js';
 import { GLOBAL_CONFIG } from '@sentio/runtime';
-import { EthChainId } from '@sentio/sdk/eth';
 
 GLOBAL_CONFIG.execution = {
   sequential: true,
@@ -53,13 +51,17 @@ PendleMarketProcessor.bind({
     await handleMarketSwap(evt, ctx);
   })
   .onTimeInterval(async (_, ctx) => {
-    await processAllLPAccounts(ctx);
-    await processAllYTAccounts(ctx);
-    ctx.eventLogger.emit("daily-update-block", {
-      blockNumber: ctx.blockNumber,
-      timestamp: getUnixTimestamp(ctx.timestamp)
-    })
-  }, CONFIG.SETTLE_FREQUENCY);
+
+  }, CONFIG.SETTLE_FREQUENCY).onBlockInterval(async(blk, ctx) => {
+    if (checkValidUpdateTimestamp(blk.timestamp)) {
+      await processAllLPAccounts(ctx);
+      await processAllYTAccounts(ctx);
+      ctx.eventLogger.emit("daily-update-block", {
+        blockNumber: ctx.blockNumber,
+        timestamp: getUnixTimestamp(ctx.timestamp)
+      })
+    }
+  });
 
 EQBBaseRewardProcessor.bind({
   address: PENDLE_POOL_ADDRESSES.EQB_STAKING,
